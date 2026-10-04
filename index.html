@@ -1,3 +1,44 @@
 <script>
-  location.href = "https://6cfade9e.r20.vip.cpolar.cn";
+    const LAN_URL = "http://192.168.2.141:65535";
+    const PUBLIC_URL = "https://6cfade9e.r20.vip.cpolar.cn";
+
+    // 测试内网地址
+    function checkLan() {
+        return new Promise((resolve) => {
+            const controller = new AbortController();
+
+            // 1.5 秒超时
+            const timeout = setTimeout(() => {
+                controller.abort();
+                resolve(false);
+            }, 1500);
+
+            fetch(LAN_URL, {
+                method: "HEAD",
+                mode: "no-cors",
+                cache: "no-cache",
+                signal: controller.signal
+            })
+            .then(() => {
+                clearTimeout(timeout);
+                resolve(true);
+            })
+            .catch(() => {
+                clearTimeout(timeout);
+                resolve(false);
+            });
+        });
+    }
+
+    async function redirect() {
+        const lanAvailable = await checkLan();
+
+        if (lanAvailable) {
+            location.href = LAN_URL;
+        } else {
+            location.href = PUBLIC_URL;
+        }
+    }
+
+    redirect();
 </script>
