@@ -1,44 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>HappyGo</title>
+</head>
+
+<body>
+
 <script>
+
     const LAN_URL = "http://192.168.2.141:65535";
     const PUBLIC_URL = "https://6cfade9e.r20.vip.cpolar.cn";
 
-    // 测试内网地址
-    function checkLan() {
-        return new Promise((resolve) => {
-            const controller = new AbortController();
+    const timeout = 1200;
 
-            // 1.5 秒超时
-            const timeout = setTimeout(() => {
-                controller.abort();
-                resolve(false);
-            }, 1500);
+    function check(url) {
+        return new Promise(resolve => {
 
-            fetch(LAN_URL, {
-                method: "HEAD",
-                mode: "no-cors",
-                cache: "no-cache",
-                signal: controller.signal
-            })
-            .then(() => {
-                clearTimeout(timeout);
-                resolve(true);
-            })
-            .catch(() => {
-                clearTimeout(timeout);
-                resolve(false);
-            });
+            const img = new Image();
+            let done = false;
+
+            const finish = result => {
+                if (done) return;
+
+                done = true;
+                clearTimeout(timer);
+                resolve(result);
+            };
+
+            const timer = setTimeout(() => {
+                finish(false);
+            }, timeout);
+
+            img.onload = () => finish(true);
+
+            img.onerror = () => finish(true);
+
+            img.src = url + "/favicon.ico?_=" + Date.now();
         });
     }
 
-    async function redirect() {
-        const lanAvailable = await checkLan();
+    async function start() {
 
-        if (lanAvailable) {
-            location.href = LAN_URL;
-        } else {
-            location.href = PUBLIC_URL;
+        // 优先检查内网
+        if (await check(LAN_URL)) {
+            window.location.replace(LAN_URL);
+            return;
         }
+
+        // 内网不存在，走公网
+        window.location.replace(PUBLIC_URL);
     }
 
-    redirect();
+    start();
+
 </script>
+
+</body>
+</html>
