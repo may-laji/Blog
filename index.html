@@ -1,3 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HappyGo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 16px;
+        }
+        .card {
+            background: white;
+            padding: 36px 28px 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+        }
+        .lang-switch {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 13px;
+            color: #1677ff;
+            cursor: pointer;
+            user-select: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            z-index: 10;
+            line-height: 1.2;
+        }
+        .lang-switch:hover {
+            background: #f0f7ff;
+        }
+        h1 {
+            margin: 12px 0 12px;
+            font-size: 24px;
+            font-weight: 600;
+            padding: 0 40px;
+        }
+        #tip {
+            margin: 0 0 24px;
+            color: #666;
+            font-size: 15px;
+            line-height: 1.5;
+            min-height: 44px;
+        }
+        .btn-group {
+            display: none;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .btn-primary {
+            background: #1677ff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4096ff;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #999;
+            min-height: 20px;
+        }
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #1677ff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+            .card {
+                padding: 32px 20px 28px;
+                border-radius: 14px;
+            }
+            .lang-switch {
+                top: 10px;
+                right: 10px;
+                font-size: 12px;
+                padding: 5px 8px;
+            }
+            h1 {
+                font-size: 22px;
+                margin-top: 10px;
+                padding: 0 36px;
+            }
+            #tip {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            .btn {
+                padding: 11px 16px;
+                font-size: 14px;
+                min-width: 110px;
+            }
+            .status {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                padding: 28px 16px 24px;
+            }
+            h1 {
+                font-size: 20px;
+                padding: 0 30px;
+            }
+            .btn {
+                min-width: 100px;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="lang-switch" id="langSwitch">English</div>
+        <h1>HappyGo</h1>
+        <p id="tip">正在检测网络环境...</p>
+        <div class="btn-group" id="btnGroup">
+            <a class="btn btn-primary" id="btnLocal" href="http://192.168.2.141:65535">进入内网</a>
+            <a class="btn btn-secondary" id="btnPublic" href="https://36d03574.r20.vip.cpolar.cn">进入公网</a>
+        </div>
+        <div class="status" id="status">
+            <span class="loading"></span>正在检测内网是否可达...
+        </div>
+    </div>
+
 <script>
-  location.href = "https://36d03574.r20.vip.cpolar.cn";
+    const LAN_URL = "http://192.168.2.141:65535";
+    const PUBLIC_URL = "https://36d03574.r20.vip.cpolar.cn";
+    const TIMEOUT = 1000;
+    const MIN_SHOW_TIME = 600;
+
+    const i18n = {
+        zh: {
+            switchTo: "English",
+            checking: "正在检测网络环境...",
+            detecting: "正在检测内网是否可达...",
+            localFound: "检测到内网环境",
+            jumpingLocal: "正在跳转内网...",
+            noLocal: "未检测到内网，即将进入公网",
+            manualTip: "如在公司，可手动点击下方「进入内网」",
+            btnLocal: "进入内网",
+            btnPublic: "进入公网"
+        },
+        en: {
+            switchTo: "中文",
+            checking: "Detecting network environment...",
+            detecting: "Checking if local network is available...",
+            localFound: "Local network detected",
+            jumpingLocal: "Redirecting to local network...",
+            noLocal: "Local network not detected, redirecting to public network",
+            manualTip: "If you are in the office, click \"Enter Local\" below",
+            btnLocal: "Enter Local",
+            btnPublic: "Enter Public"
+        }
+    };
+
+    function getBrowserLang() {
+        const lang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+        if (lang.startsWith("zh")) {
+            return "zh";
+        }
+        return "en";
+    }
+
+    let currentLang = getBrowserLang();
+
+    function t(key) {
+        return i18n[currentLang][key] || key;
+    }
+
+    function updateTexts() {
+        document.getElementById("langSwitch").textContent = t("switchTo");
+        document.getElementById("btnLocal").textContent = t("btnLocal");
+        document.getElementById("btnPublic").textContent = t("btnPublic");
+        document.documentElement.lang = currentLang === "zh" ? "zh-CN" : "en";
+    }
+
+    function switchLang() {
+        currentLang = currentLang === "zh" ? "en" : "zh";
+        updateTexts();
+
+        const tip = document.getElementById("tip");
+        const status = document.getElementById("status");
+        const btnGroup = document.getElementById("btnGroup");
+
+        if (btnGroup.style.display === "flex") {
+            tip.textContent = t("noLocal");
+            status.textContent = t("manualTip");
+        } else {
+            tip.textContent = t("checking");
+            status.innerHTML = `<span class="loading"></span>${t("detecting")}`;
+        }
+    }
+
+    document.getElementById("langSwitch").addEventListener("click", switchLang);
+
+    function checkLocalByImage() {
+        return new Promise(resolve => {
+            const img = new Image();
+            let settled = false;
+
+            const done = (result) => {
+                if (settled) return;
+                settled = true;
+                img.onload = img.onerror = null;
+                resolve(result);
+            };
+
+            const timer = setTimeout(() => done(false), TIMEOUT);
+
+            img.onload = () => {
+                clearTimeout(timer);
+                done(true);
+            };
+
+            img.onerror = () => {
+                clearTimeout(timer);
+                done(false);
+            };
+
+            img.src = LAN_URL + "/favicon.ico?_=" + Date.now();
+        });
+    }
+
+    async function start() {
+        updateTexts();
+
+        const tip = document.getElementById("tip");
+        const status = document.getElementById("status");
+        const btnGroup = document.getElementById("btnGroup");
+
+        tip.textContent = t("checking");
+        status.innerHTML = `<span class="loading"></span>${t("detecting")}`;
+
+        const startTime = Date.now();
+        const localAvailable = await checkLocalByImage();
+
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_SHOW_TIME) {
+            await new Promise(r => setTimeout(r, MIN_SHOW_TIME - elapsed));
+        }
+
+        if (localAvailable) {
+            tip.textContent = t("localFound");
+            status.textContent = t("jumpingLocal");
+            setTimeout(() => {
+                window.location.replace(LAN_URL);
+            }, 400);
+        } else {
+            tip.textContent = t("noLocal");
+            status.textContent = t("manualTip");
+            btnGroup.style.display = "flex";
+
+            setTimeout(() => {
+                window.location.replace(PUBLIC_URL);
+            }, 2000);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", start);
+    } else {
+        start();
+    }
 </script>
+</body>
+</html>
