@@ -1,3 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>HappyGo</title>
+</head>
+
+<body>
+
 <script>
-  location.href = "https://36d03574.r20.vip.cpolar.cn";
+
+    const LAN_URL = "http://192.168.2.141:65535";
+    const PUBLIC_URL = "https://36d03574.r20.vip.cpolar.cn";
+
+    const timeout = 1500;
+
+    function checkLocal() {
+
+        return new Promise(resolve => {
+
+            const img = new Image();
+            let finished = false;
+
+            const finish = result => {
+
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
+
+                clearTimeout(timer);
+
+                resolve(result);
+            };
+
+            const timer = setTimeout(() => {
+                finish(false);
+            }, timeout);
+
+            img.onload = () => {
+                finish(true);
+            };
+
+            img.onerror = () => {
+                finish(true);
+            };
+
+            img.src =
+                LAN_URL +
+                "/common/local-check?_=" +
+                Date.now();
+        });
+    }
+
+
+    async function start() {
+
+        const available = await checkLocal();
+
+        if (available) {
+
+            window.location.replace(LAN_URL);
+
+            return;
+        }
+
+        window.location.replace(PUBLIC_URL);
+    }
+
+
+    start();
+
 </script>
+
+</body>
+</html>
